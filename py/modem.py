@@ -2,7 +2,7 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 05.10.2017 17:20
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 06.10.2017 13:25
 ##############################################################################
 import numpy as np
 
@@ -51,7 +51,7 @@ def ofdmMod(ofdmdict, datasymbols, pilotsymbols):
     #Equalize the number of symbols
     data=datasymbols[0:nsyms,:]
     pilots=pilotsymbols[0:nsyms,:]
-    frames=np.zeros((nsyms,framelen))
+    frames=np.zeros((nsyms,framelen),dtype='complex')
     frames[:,data_loc]=datasymbols
     frames[:,pilot_loc]=pilotsymbols
     ofdmsyms=np.fft.ifft(frames,axis=1)*framelen
@@ -62,81 +62,83 @@ def ofdmMod(ofdmdict, datasymbols, pilotsymbols):
     ofdmsig=ofdmsyms.reshape((1,nsyms*(framelen+CPlen)))
     return ofdmsig
 
-#def qamModulateBitStream(bitStream, qamOrder, grayFlag=False):
-#    #bitStream should be a numpy binary array
-#    if qamOrder > 256:
-#        print("Symbols with >8 bits currently not supported!")
-#        return 0
-#    #Generate QAM constellation of order qamOrder
-#    qamConstellation = qamMod(range(0, qamOrder), qamOrder)
-#    
-#    #Scale constellation to have an average power of 1
-#    normalizationScalar = modNorm(qamConstellation, 'avpow')
-#    
-#    bitsPerSymbol = int(np.log2(qamOrder))
-#    
-#    bitStreamSymbolGrouped = bitStream.reshape((-1, bitsPerSymbol))
-#    numSymbols = bitStreamSymbolGrouped.shape[0]
-#    bitStreamBytePad = np.zeros((numSymbols, 8-bitsPerSymbol), dtype='int32')
-#    wordStream = np.packbits(np.append(bitStreamBytePad, bitStreamSymbolGrouped, axis=1)).astype(int)
-#    
-#    qamSymbolStream = normalizationScalar*qamMod(wordStream, qamOrder, grayFlag)
-#    
-#    return wordStream, qamSymbolStream
-#
-#def qamDemod(symbolStream, qamOrder, grayFlag=False):
-#    realMaxValue = int(np.sqrt(qamOrder)-1)
-#    
-#    realWordStream = np.clip(np.round((np.real(symbolStream)+realMaxValue)/2), 0, realMaxValue).astype(int)
-#    imagWordStream = np.clip(np.round((np.imag(symbolStream)+realMaxValue)/2), 0, realMaxValue).astype(int)
-#    
-#    if grayFlag:
-#        realWordStream = grayDemod(realWordStream)
-#        imagWordStream = grayDemod(imagWordStream)
-#    
-#    wordStream = imagWordStream + (realMaxValue+1)*realWordStream
-#    
-#    return wordStream
-#
-#def qamMod(wordStream, qamOrder, grayFlag=False):
-#    if qamOrder == 2:
-#        qamDictionary = np.array([-1, 1])
-#    else:
-#        #wordStream between 0 and qamOrder-1
-#        realMaxValue = int(np.sqrt(qamOrder))-1
-#        qamDictionaryI = np.arange(-realMaxValue, realMaxValue+2, 2)
-#        
-#        qamDictionary = np.zeros((len(qamDictionaryI), len(qamDictionaryI)), dtype=complex)
-#        for iIndex in range(0, len(qamDictionaryI)):
-#            iValue = qamDictionaryI[iIndex]
-#            for qIndex in range(0, len(qamDictionaryI)):
-#                qValue = qamDictionaryI[qIndex]
-#                qamDictionary[iIndex,qIndex] = iValue + 1j*qValue            
-#        qamDictionary = qamDictionary.flatten()
-#        
-#        if grayFlag:
-#            numRealBits = int(np.log2(np.sqrt(qamOrder)))
-#            wordStreamI = np.bitwise_and(wordStream, 2**numRealBits-1)
-#            wordStreamQ = np.right_shift(wordStream, numRealBits)
-#            
-#            wordStreamI = grayMod(wordStreamI)
-#            wordStreamQ = grayMod(wordStreamQ)
-#            
-#            wordStream = wordStreamI + np.left_shift(wordStreamQ, numRealBits)
-#        
-#    symbolStream = qamDictionary[wordStream]
-#    return symbolStream
-#
-#def modNorm(symbolStream, powerMetric):
-#    if powerMetric == 'avpow':
-#        meanPower = np.mean(np.abs(symbolStream)**2)
-#        normalizingFactor = np.sqrt(1/meanPower)
-#    
-#    return normalizingFactor
-#
-#def nextPow2(inputValue):
-#    nextValue = np.ceil(np.log2(inputValue))
-#    return nextValue
+def qamModulateBitStream(bitStream, qamOrder, grayFlag=False):
+    #bitStream should be a numpy binary array
+    if qamOrder > 256:
+        print("Symbols with >8 bits currently not supported!")
+        return 0
+    #Generate QAM constellation of order qamOrder
+    qamConstellation = qamMod(range(0, qamOrder), qamOrder)
+    
+    #Scale constellation to have an average power of 1
+    normalizationScalar = modNorm(qamConstellation, 'avpow')
+    
+    bitsPerSymbol = int(np.log2(qamOrder))
+    
+    bitStreamSymbolGrouped = bitStream.reshape((-1, bitsPerSymbol))
+    numSymbols = bitStreamSymbolGrouped.shape[0]
+    #Bytepad and packbits convert the bitstream to integers
+    #Is this the mapping defined in standars, or does it matter? MK 
+    bitStreamBytePad = np.zeros((numSymbols, 8-bitsPerSymbol), dtype='int32')
+    wordStream = np.packbits(np.append(bitStreamBytePad, bitStreamSymbolGrouped, axis=1)).astype(int)
+    
+    qamSymbolStream = normalizationScalar*qamMod(wordStream, qamOrder, grayFlag)
+    
+    return wordStream, qamSymbolStream
+
+def qamDemod(symbolStream, qamOrder, grayFlag=False):
+    realMaxValue = int(np.sqrt(qamOrder)-1)
+    
+    realWordStream = np.clip(np.round((np.real(symbolStream)+realMaxValue)/2), 0, realMaxValue).astype(int)
+    imagWordStream = np.clip(np.round((np.imag(symbolStream)+realMaxValue)/2), 0, realMaxValue).astype(int)
+    
+    if grayFlag:
+        realWordStream = grayDemod(realWordStream)
+        imagWordStream = grayDemod(imagWordStream)
+    
+    wordStream = imagWordStream + (realMaxValue+1)*realWordStream
+    
+    return wordStream
+
+def qamMod(wordStream, qamOrder, grayFlag=False):
+    if qamOrder == 2:
+        qamDictionary = np.array([-1, 1])
+    else:
+        #wordStream between 0 and qamOrder-1
+        realMaxValue = int(np.sqrt(qamOrder))-1
+        qamDictionaryI = np.arange(-realMaxValue, realMaxValue+2, 2)
+        
+        qamDictionary = np.zeros((len(qamDictionaryI), len(qamDictionaryI)), dtype=complex)
+        for iIndex in range(0, len(qamDictionaryI)):
+            iValue = qamDictionaryI[iIndex]
+            for qIndex in range(0, len(qamDictionaryI)):
+                qValue = qamDictionaryI[qIndex]
+                qamDictionary[iIndex,qIndex] = iValue + 1j*qValue            
+        qamDictionary = qamDictionary.flatten()
+        
+        if grayFlag:
+            numRealBits = int(np.log2(np.sqrt(qamOrder)))
+            wordStreamI = np.bitwise_and(wordStream, 2**numRealBits-1)
+            wordStreamQ = np.right_shift(wordStream, numRealBits)
+            
+            wordStreamI = grayMod(wordStreamI)
+            wordStreamQ = grayMod(wordStreamQ)
+            
+            wordStream = wordStreamI + np.left_shift(wordStreamQ, numRealBits)
+        
+    symbolStream = qamDictionary[wordStream]
+    return symbolStream
+
+def modNorm(symbolStream, powerMetric):
+    if powerMetric == 'avpow':
+        meanPower = np.mean(np.abs(symbolStream)**2)
+        normalizingFactor = np.sqrt(1/meanPower)
+    
+    return normalizingFactor
+
+def nextPow2(inputValue):
+    nextValue = np.ceil(np.log2(inputValue))
+    return nextValue
 
 if __name__=="__main__":
     import matplotlib.pyplot as plt
