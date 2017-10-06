@@ -2,15 +2,15 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 05.10.2017 16:18
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 05.10.2017 17:20
 ##############################################################################
 import numpy as np
 
-def pilot2ofdmsymbols(ofdmDict,pilotstream):
-    #An example of an ofdmfDict
-    ##ofdmDict is a dictionary describing the frame structure of the
+def pilot2ofdmsymbols(ofdmdict,pilotstream):
+    #An example of an ofdmfdict
+    ##ofdmdict is a dictionary describing the frame structure of the
     ##OFDM sybol
-    #ofdm64Dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
+    #ofdm64dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
             #'pilot_loc' : np.r_[-21, -7, 7, 21] + 32, 'CPlen':16}
     pilotblocklen=len(pilot_loc)
     nsyms=int(np.ceil(len(pilotstream)/pilotblocklen))
@@ -20,14 +20,14 @@ def pilot2ofdmsymbols(ofdmDict,pilotstream):
     pilots=pilots.reshape((nsyms,pilotblocklen))
     return pilotsymbols
 
-def data2ofdmsymbols(ofdmDict,datastream):
-    #An example of an ofdmfDict
-    ##ofdmDict is a dictionary describing the frame structure of the
+def data2ofdmsymbols(ofdmdict,datastream):
+    #An example of an ofdmfdict
+    ##ofdmdict is a dictionary describing the frame structure of the
     ##OFDM sybol
-    #ofdm64Dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
+    #ofdm64dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
             #'pilot_loc' : np.r_[-21, -7, 7, 21] + 32, 'CPlen':16}
     datablocklen=len(data_loc)
-    CPlen=ofdmDict['CPlen']
+    CPlen=ofdmdict['CPlen']
     nsyms=int(np.ceil(len(datastream)/datablocklen))
     #Zero-pad data to full blocks
     data=np.zeros((nsyms*datablocklen))
@@ -36,17 +36,17 @@ def data2ofdmsymbols(ofdmDict,datastream):
     return ofdmsymbols
 
 
-def ofdmMod(ofdmDict, datasymbols, pilotsymbols):
-    ##ofdmDict is a dictionary describing the frame structure of the
+def ofdmMod(ofdmdict, datasymbols, pilotsymbols):
+    ##ofdmdict is a dictionary describing the frame structure of the
     ##OFDM sybol
     ##No guard bands
-    ##ofdm64Dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
+    ##ofdm64dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
     #        #'pilot_loc' : np.r_[-21, -7, 7, 21] + 32, 'CPlen':16}
-    framelen=ofdmDict['framelen']
-    data_loc=ofdmDict['data_loc']
-    pilot_loc=ofdmDict['pilot_loc']
+    framelen=ofdmdict['framelen']
+    data_loc=ofdmdict['data_loc']
+    pilot_loc=ofdmdict['pilot_loc']
     pilotblocklen=len(pilot_loc)
-    CPlen=ofdmDict['CPlen']
+    CPlen=ofdmdict['CPlen']
     nsyms=np.min((datasymbols.shape[0],pilotsymbols.shape[0]))
     #Equalize the number of symbols
     data=datasymbols[0:nsyms,:]
@@ -140,12 +140,12 @@ def ofdmMod(ofdmDict, datasymbols, pilotsymbols):
 
 if __name__=="__main__":
     import matplotlib.pyplot as plt
-    ofdmDict=ofdm64Dict_noguardband
-    frame=np.zeros((100,ofdmDict['framelen']))
+    ofdmdict=ofdm64dict_noguardband
+    frame=np.zeros((100,ofdmdict['framelen']))
     frame[:,[13,17,18]]=1 #Some carriers set to constant
-    datasymbols=frame[:,ofdmDict['data_loc']]
-    pilotsymbols=frame[:,ofdmDict['pilot_loc']]
-    modsig=ofdmMod(ofdmDict,datasymbols,pilotsymbols)
+    datasymbols=frame[:,ofdmdict['data_loc']]
+    pilotsymbols=frame[:,ofdmdict['pilot_loc']]
+    modsig=ofdmMod(ofdmdict,datasymbols,pilotsymbols)
     #print(np.real(modsig)[0,:])
     plt.plot(np.real(modsig)[0,:])
     plt.show()
