@@ -2,7 +2,7 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 06.10.2017 13:25
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 02.11.2017 23:16
 ##############################################################################
 import numpy as np
 
@@ -36,7 +36,7 @@ def data2ofdmsymbols(ofdmdict,datastream):
     return ofdmsymbols
 
 
-def ofdmMod(ofdmdict, datasymbols, pilotsymbols):
+def ofdmMod(ofdmdict, dataframe, pilotframe):
     ##ofdmdict is a dictionary describing the frame structure of the
     ##OFDM sybol
     ##No guard bands
@@ -47,13 +47,13 @@ def ofdmMod(ofdmdict, datasymbols, pilotsymbols):
     pilot_loc=ofdmdict['pilot_loc']
     pilotblocklen=len(pilot_loc)
     CPlen=ofdmdict['CPlen']
-    nsyms=np.min((datasymbols.shape[0],pilotsymbols.shape[0]))
+    nsyms=np.min((dataframe.shape[0],pilotframe.shape[0]))
     #Equalize the number of symbols
-    data=datasymbols[0:nsyms,:]
-    pilots=pilotsymbols[0:nsyms,:]
+    data=dataframe[0:nsyms,:]
+    pilots=pilotframe[0:nsyms,:]
     frames=np.zeros((nsyms,framelen),dtype='complex')
-    frames[:,data_loc]=datasymbols
-    frames[:,pilot_loc]=pilotsymbols
+    frames[:,data_loc]=dataframe
+    frames[:,pilot_loc]=pilotframe
     ofdmsyms=np.fft.ifft(frames,axis=1)*framelen
     #Add cyclic prefix
     ofdmsyms=np.concatenate((ofdmsyms[:,-CPlen:],ofdmsyms),axis=1)
