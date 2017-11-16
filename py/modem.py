@@ -2,7 +2,7 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 02.11.2017 23:16
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 15.11.2017 16:56
 ##############################################################################
 import numpy as np
 
@@ -38,10 +38,6 @@ def data2ofdmsymbols(ofdmdict,datastream):
 
 def ofdmMod(ofdmdict, dataframe, pilotframe):
     ##ofdmdict is a dictionary describing the frame structure of the
-    ##OFDM sybol
-    ##No guard bands
-    ##ofdm64dict_ngb={ 'framelen':64,'data_loc': np.r_[1:11+1, 13:25+1, 27:39+1, 41:53+1, 55:64+1]-1,
-    #        #'pilot_loc' : np.r_[-21, -7, 7, 21] + 32, 'CPlen':16}
     framelen=ofdmdict['framelen']
     data_loc=ofdmdict['data_loc']
     pilot_loc=ofdmdict['pilot_loc']
@@ -54,6 +50,7 @@ def ofdmMod(ofdmdict, dataframe, pilotframe):
     frames=np.zeros((nsyms,framelen),dtype='complex')
     frames[:,data_loc]=dataframe
     frames[:,pilot_loc]=pilotframe
+    #frames=np.r_['1',frames[:,32::], frames[:,0:32]]
     ofdmsyms=np.fft.ifft(frames,axis=1)*framelen
     #Add cyclic prefix
     ofdmsyms=np.concatenate((ofdmsyms[:,-CPlen:],ofdmsyms),axis=1)
