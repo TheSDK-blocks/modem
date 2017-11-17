@@ -2,7 +2,7 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 16.11.2017 14:55
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 17.11.2017 14:32
 ##############################################################################
 import numpy as np
 
@@ -44,24 +44,23 @@ def ofdmMod(ofdmdict, dataframe, pilotframe):
     pilotblocklen=len(pilot_loc)
     CPlen=ofdmdict['CPlen']
     nsyms=np.min((dataframe.shape[0],pilotframe.shape[0]))
+
     #Equalize the number of symbols
     data=dataframe[0:nsyms,:]
     pilots=pilotframe[0:nsyms,:]
     frames=np.zeros((nsyms,framelen),dtype='complex')
     frames[:,data_loc]=dataframe
     frames[:,pilot_loc]=pilotframe
-    print(frames[0,:])
+    
     #frames=np.r_['1',frames[:,32::], frames[:,0:32]]
     ofdmsyms=np.fft.ifft(frames,axis=1)*framelen
     #Add cyclic prefix
     ofdmsyms=np.r_['1',ofdmsyms[:,-CPlen::],ofdmsyms]
     test=np.fft.fft(ofdmsyms[0,16:80])/64
-    print(test[range(-32,32)])
+    
     #Maybe add Windowing here
     #then rehape to vector
     ofdmsig=ofdmsyms.reshape((1,nsyms*(framelen+CPlen)))
-    #print(ofdmsyms[0,16:80])
-    #print(ofdmsig[0,16:80])
     return ofdmsig
 
 def qamModulateBitStream(bitStream, qamOrder, grayFlag=False):
