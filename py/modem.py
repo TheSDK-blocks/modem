@@ -2,7 +2,7 @@
 # Provides helper functions for data modulation and demodulation
 # From the codes of Luke Calderin cowardly stolen, modified and added by Marko Kosunen
 #
-# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 17.11.2017 14:32
+# Last modification by Marko Kosunen, marko.kosunen@aalto.fi, 20.11.2017 16:58
 ##############################################################################
 import numpy as np
 
@@ -116,7 +116,6 @@ def qamMod(wordStream, qamOrder, grayFlag=False):
                 qValue = qamDictionaryI[qIndex]
                 qamDictionary[iIndex,qIndex] = iValue + 1j*qValue            
         qamDictionary = qamDictionary.flatten()
-        
         if grayFlag:
             numRealBits = int(np.log2(np.sqrt(qamOrder)))
             wordStreamI = np.bitwise_and(wordStream, 2**numRealBits-1)
@@ -126,7 +125,6 @@ def qamMod(wordStream, qamOrder, grayFlag=False):
             wordStreamQ = grayMod(wordStreamQ)
             
             wordStream = wordStreamI + np.left_shift(wordStreamQ, numRealBits)
-        
     symbolStream = qamDictionary[wordStream]
     return symbolStream
 
